@@ -5,3 +5,4 @@ torch
 torchvision
 matplotlib
 tqdm
+flwr>=1.9.0
