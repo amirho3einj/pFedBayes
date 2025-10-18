@@ -13,7 +13,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fraction-fit", type=float, default=1.0, help="Fraction of clients used during training")
     parser.add_argument("--min-fit-clients", type=int, default=1, help="Min number of clients for fit")
     parser.add_argument("--min-available-clients", type=int, default=1, help="Min number of available clients")
-    parser.add_argument("--unweighted-mean", action="store_true", help="Use unweighted mean aggregation (default). If false, weight by num_examples")
+    parser.add_argument("--weighted-by-num-examples", action="store_true", help="Aggregate weighted by client num_examples (default: unweighted mean)")
     return parser.parse_args()
 
 
@@ -22,10 +22,11 @@ def main() -> None:
 
     strategy = PersonalizedStrategy(
         sample_size=args.sample_size,
-        weight_by_num_examples=(not args.unweighted_mean),
+        weight_by_num_examples=args.weighted_by_num_examples,
         fraction_fit=args.fraction_fit,
         min_fit_clients=args.min_fit_clients,
         min_available_clients=args.min_available_clients,
+        fit_config={},
     )
 
     fl.server.start_server(
