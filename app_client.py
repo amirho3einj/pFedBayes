@@ -3,6 +3,7 @@ import argparse
 import flwr as fl
 
 from personalized_client import ClientRunConfig, PersonalizedClient
+from adapters import PfedBayesAdapter
 
 
 def parse_args() -> argparse.Namespace:
@@ -14,6 +15,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--kl-weight", type=float, default=1.0, help="zeta: KL weight")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument("--client-id", type=str, default=None, help="Optional client id for logging")
+    parser.add_argument("--dataset", type=str, default="Mnist", help="Dataset name for adapter (e.g., Mnist, FMnist)")
+    parser.add_argument("--device", type=str, default=None, help="Torch device string, e.g., 'cuda:0' or 'cpu'")
     return parser.parse_args()
 
 
@@ -26,7 +29,14 @@ def main() -> None:
         kl_weight=args.kl_weight,
         seed=args.seed,
     )
-    client = PersonalizedClient(config=cfg, client_id=args.client_id)
+    # Use the pFedBayes adapter to wrap the existing implementation
+    # Map client-id to integer index for per-client data selection
+    try:
+        client_index = int(args.client_id) if args.client_id is not None else 0
+    except ValueError:
+        client_index = 0
+    adapter = PfedBayesAdapter(dataset=args.dataset, client_index=client_index, device=args.device)
+    client = PersonalizedClient(adapter=adapter, config=cfg, client_id=args.client_id)
     fl.client.start_numpy_client(server_address=args.server_address, client=client)
 
 

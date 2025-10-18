@@ -81,7 +81,7 @@ class PersonalizedClient(fl.client.NumPyClient):
         rng = np.random.default_rng(seed + (0 if self.client_id is None else hash(self.client_id) % 10000))
 
         # Alternating local routine
-        metrics_accum: Dict[str, float] = {"loss_personal": 0.0, "kl": 0.0, "nll": 0.0}
+        metrics_accum: Dict[str, float] = {"loss_personal": 0.0, "kl": 0.0}
         steps_done = 0
         data_iter = self.adapter.minibatch_iterator(self.train_data, batch_size=b, rng=rng)
         for _ in range(R):

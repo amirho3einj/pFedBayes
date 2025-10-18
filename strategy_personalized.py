@@ -33,6 +33,7 @@ class PersonalizedStrategy(fl.server.strategy.FedAvg):
         min_fit_clients: int = 1,
         min_available_clients: int = 1,
         evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
+        fit_config: Optional[Dict[str, Scalar]] = None,
     ) -> None:
         super().__init__(
             fraction_fit=fraction_fit,
@@ -44,6 +45,7 @@ class PersonalizedStrategy(fl.server.strategy.FedAvg):
         )
         self.sample_size = sample_size
         self.weight_by_num_examples = weight_by_num_examples
+        self.static_fit_config: Dict[str, Scalar] = fit_config or {}
 
     # Flower will call this on every round to select clients and provide FitIns
     def configure_fit(
@@ -60,11 +62,15 @@ class PersonalizedStrategy(fl.server.strategy.FedAvg):
                 # Not enough clients available; fall back to as many as possible
                 pass
             fit_config: Dict[str, Scalar] = {"server_round": server_round}
+            fit_config.update(self.static_fit_config)
             clients = client_manager.sample(num_clients=desired, min_num_clients=desired)
             fit_ins = FitIns(parameters, fit_config)
             return [(client, fit_ins) for client in clients]
 
         # Otherwise, defer to FedAvg's default behavior
+        # Defer to FedAvg's default behavior, but attach static fit config via the fit_config_fn hook
+        # If we want to attach config, we can override fit_config_fn at strategy init; here we simply
+        # return default and rely on fixed fraction_fit sampling.
         return super().configure_fit(server_round, parameters, client_manager)
 
     def aggregate_fit(
